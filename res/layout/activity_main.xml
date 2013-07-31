@@ -1,0 +1,135 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res/com.xklakoux.drumometer"
+    android:id="@+id/RelativeLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DDDDDD"
+    tools:context=".MainActivity" >
+
+    <TextView
+        android:id="@+id/tvDrumometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="29dp"
+        android:layout_marginTop="50dp"
+        android:text="drumometer"
+        android:textColor="#666666"
+        android:textSize="40sp" />
+
+    <RelativeLayout
+        android:id="@+id/rlProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvDrumometer"
+        android:layout_centerHorizontal="true" >
+
+        <de.passsy.holocircularprogressbar.HoloCircularProgressBar
+            android:id="@+id/holoCircularProgressBar1"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_centerHorizontal="true"
+            app:progress="0"
+            app:progress_background_color="@android:color/holo_blue_light"
+            app:progress_color="#666666" />
+
+        <Button
+            android:id="@+id/bSubstract"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/holoCircularProgressBar1"
+            android:background="@android:color/transparent"
+            android:text="-"
+            android:textColor="#666666"
+            android:textStyle="bold"
+            android:textSize="40sp" />
+
+        <Button
+            android:id="@+id/bAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@id/holoCircularProgressBar1"
+            android:background="@android:color/transparent"
+            android:text="+"
+            android:textColor="#666666"
+            android:textStyle="bold"
+            android:textSize="40sp" />
+
+        <EditText
+            android:id="@+id/etSeconds"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="5"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="#666666"
+            android:textSize="40sp"
+            android:inputType="number" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/llCountingLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rlProgressBar"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        >
+
+        <LinearLayout
+            android:id="@+id/llBeatsCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:background="@drawable/card_background"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp" >
+
+            <TextView
+                android:id="@+id/tvCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="0"
+                android:textColor="#666666"
+                android:textSize="30sp" />
+
+            <TextView
+                android:id="@+id/tvBeatsCounted"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="beats counted"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textColor="#666666" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvKeepGoing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/llBeatsCount"
+            android:layout_centerHorizontal="true"
+            android:text="Keep going."
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="#666666" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/bStartCounting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rlProgressBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="7dp"
+        android:text="Start counting"
+        android:textColor="@android:color/white" />
+
+</RelativeLayout>
