@@ -22,23 +22,25 @@ package com.xklakoux.drumometer;
 
 import java.util.LinkedList;
 
-import com.musicg.api.WhistleApi;
+import com.musicg.api.DetectionApi;
+import com.musicg.api.*;
 import com.musicg.wave.WaveHeader;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.util.Log;
 
 public class DetectorThread extends Thread{
 
 	private RecorderThread recorder;
 	private WaveHeader waveHeader;
-	private WhistleApi whistleApi;
+	private BeatApi beatApi;
 	private volatile Thread _thread;
 
-	private LinkedList<Boolean> whistleResultList = new LinkedList<Boolean>();
-	private int numWhistles;
-	private int whistleCheckLength = 3;
-	private int whistlePassScore = 3;
+	private LinkedList<Boolean> beatResultList = new LinkedList<Boolean>();
+	private int numBeats;
+	private int beatCheckLength = 1;
+	private int beatPassScore = 1;
 	
 	private OnSignalsDetectedListener onSignalsDetectedListener;
 	
@@ -56,7 +58,7 @@ public class DetectorThread extends Thread{
 		
 		int channel = 0;
 		// whistle detection only supports mono channel
-		if (audioRecord.getChannelConfiguration() == AudioFormat.CHANNEL_CONFIGURATION_MONO){
+		if (audioRecord.getChannelConfiguration() == AudioFormat.CHANNEL_IN_MONO){
 			channel = 1;
 		}
 
@@ -64,16 +66,16 @@ public class DetectorThread extends Thread{
 		waveHeader.setChannels(channel);
 		waveHeader.setBitsPerSample(bitsPerSample);
 		waveHeader.setSampleRate(audioRecord.getSampleRate());
-		whistleApi = new WhistleApi(waveHeader);
+		beatApi = new BeatApi(waveHeader);
 	}
 
 	private void initBuffer() {
-		numWhistles = 0;
-		whistleResultList.clear();
+		numBeats = 0;
+		beatResultList.clear();
 		
 		// init the first frames
-		for (int i = 0; i < whistleCheckLength; i++) {
-			whistleResultList.add(false);
+		for (int i = 0; i < beatCheckLength; i++) {
+			beatResultList.add(false);
 		}
 		// end init the first frames
 	}
@@ -101,34 +103,35 @@ public class DetectorThread extends Thread{
 				if (buffer != null) {
 					// sound detected	
 					// whistle detection
-					//System.out.println("*Whistle:");
-					boolean isWhistle = whistleApi.isWhistle(buffer);
-					if (whistleResultList.getFirst()) {
-						numWhistles--;
+					Log.d("tag","*Whistle:");
+					boolean isBeat = beatApi.isBeat(buffer);
+					if (beatResultList.getFirst()) {
+						numBeats--;
 					}
 		
-					whistleResultList.removeFirst();
-					whistleResultList.add(isWhistle);
+					beatResultList.removeFirst();
+					beatResultList.add(isBeat);
 		
-					if (isWhistle) {
-						numWhistles++;
+					if (isBeat) {
+						numBeats++;
+						Log.d("tag","Whistle! Fuck yeah!");
 					}
-					//System.out.println("num:" + numWhistles);
+//					System.out.println("num:" + numWhistles);
 		
-					if (numWhistles >= whistlePassScore) {
+					if (numBeats >= beatPassScore) {
 						// clear buffer
 						initBuffer();
-						onWhistleDetected();
+						onBeatDetected();
 					}
 				// end whistle detection
 				}
 				else{
 					// no sound detected
-					if (whistleResultList.getFirst()) {
-						numWhistles--;
+					if (beatResultList.getFirst()) {
+						numBeats--;
 					}
-					whistleResultList.removeFirst();
-					whistleResultList.add(false);
+					beatResultList.removeFirst();
+					beatResultList.add(false);
 				}
 				// end audio analyst
 			}
@@ -137,9 +140,9 @@ public class DetectorThread extends Thread{
 		}
 	}
 	
-	private void onWhistleDetected(){
+	private void onBeatDetected(){
 		if (onSignalsDetectedListener != null){
-			onSignalsDetectedListener.onWhistleDetected();
+			onSignalsDetectedListener.onBeatDetected();
 		}
 	}
 	

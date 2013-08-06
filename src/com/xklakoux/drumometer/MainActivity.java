@@ -8,6 +8,7 @@ import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -15,7 +16,9 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 
+import com.musicg.api.DetectionApi;
 import com.xklakoux.drumometer.util.SystemUiHider;
 
 import de.passsy.holocircularprogressbar.HoloCircularProgressBar;
@@ -26,7 +29,7 @@ import de.passsy.holocircularprogressbar.HoloCircularProgressBar;
  * 
  * @see SystemUiHider
  */
-public class MainActivity extends Activity implements OnClickListener, OnSignalsDetectedListener {
+public class MainActivity extends Activity implements OnClickListener, OnSignalsDetectedListener, OnEditorActionListener {
 
 	private TextView tvDrumometer;
 	private RelativeLayout rlProgressBar;
@@ -50,8 +53,8 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 	public static final int DETECT_NONE = 0;
 	public static final int DETECT_WHISTLE = 1;
 	public static int selectedDetection = DETECT_NONE;
-	private DetectorThread detectorThread;
-	private RecorderThread recorderThread;
+	private RecorderThread recorderThread = new RecorderThread();
+	private DetectorThread detectorThread = new DetectorThread(recorderThread);
 	private int numWhistleDetected = 0;
 	
 	@Override
@@ -75,6 +78,8 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 			@Override
 			public void onAnimationEnd(final Animator animation) {
 				progress.setProgress(0.00001f);
+				recorderThread.stopRecording();
+				detectorThread.stopDetection();
 
 			}			
 
@@ -87,6 +92,9 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 
 			}
 		});
+		
+		
+		etSeconds.setOnEditorActionListener(this);
 	}
 
 	/**
@@ -112,7 +120,10 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 			@Override
 			public void onAnimationEnd(final Animator animation) {
 				progressBar.setProgress(0f);
+				etSeconds.setText(""+(int) (initialValue/1000));
 				crossfadeIn();
+				bAdd.setEnabled(true);
+				bSubstract.setEnabled(true);
 				detectorThread.stopDetection();
 
 			}
@@ -123,6 +134,8 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 
 			@Override
 			public void onAnimationStart(final Animator animation) {
+				bAdd.setEnabled(false);
+				bSubstract.setEnabled(false);
 			}
 		});
 		progressBarAnimator.addListener(listener);
@@ -130,7 +143,17 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 
 			@Override
 			public void onAnimationUpdate(final ValueAnimator animation) {
+				Long init = initialValue/1000;
+				int currentValue = (int) ( init - init *((Float) animation.getAnimatedValue()));
+				etSeconds.setText("" +  currentValue);
 				progressBar.setProgress((Float) animation.getAnimatedValue());
+				if(currentValue < init-10){
+					tvKeepGoing.setText("Keep going.");
+					if(currentValue < init-30){
+						tvKeepGoing.setText("Almost there");
+						
+					}
+				}
 			}
 		});
 
@@ -178,13 +201,13 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 			progressBarAnimator.start();
 			
 			selectedDetection = DETECT_WHISTLE;
-			recorderThread = new RecorderThread();
-			recorderThread.start();
-			detectorThread = new DetectorThread(recorderThread);
+		
+			recorderThread.startRecording();
 			detectorThread.setOnSignalsDetectedListener(MainActivity.mainApp);
 			detectorThread.start();
 			numWhistleDetected=0;
 			tvCount.setText(""+0);
+			tvKeepGoing.setText("Good luck!");
 		}
 	}
 
@@ -249,7 +272,7 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 	}
 
 	@Override
-	public void onWhistleDetected() {
+	public void onBeatDetected() {
 		// TODO Auto-generated method stub
 		runOnUiThread(new Runnable() {
 			public void run() {
@@ -257,4 +280,20 @@ public class MainActivity extends Activity implements OnClickListener, OnSignals
 			}
 		});
 	}
+
+	@Override
+	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+		// TODO Auto-generated method stub
+		
+		switch(v.getId()){
+		case R.id.etSeconds:
+				if(Integer.valueOf(v.getText().toString())<1){
+					v.setText("1");
+				}
+				break;
+		}
+		return false;
+	}
+	
+	
 }

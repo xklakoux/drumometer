@@ -27,106 +27,94 @@ import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
 public class RecorderThread extends Thread {
-	
+
 	private AudioRecord audioRecord;
 	private boolean isRecording;
-	private int channelConfiguration = AudioFormat.CHANNEL_CONFIGURATION_MONO;
+	private int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 	private int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
+	private int frameByteSize = 4096; // for 1024 fft size (16bit sample size)
 	private int sampleRate = 44100;
-	private int frameByteSize = 2048; // for 1024 fft size (16bit sample size)
 	byte[] buffer;
-	private static int[] mSampleRates = new int[] {44100 };
 
-	
-	public RecorderThread(){
-		int recBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfiguration, audioEncoding); // need to be larger than size of a frame
+	public RecorderThread() {
 		audioRecord = findAudioRecord();
 		buffer = new byte[frameByteSize];
 	}
-	
-	public AudioRecord getAudioRecord(){
+
+	public AudioRecord getAudioRecord() {
 		return audioRecord;
 	}
-	
-	public boolean isRecording(){
+
+	public boolean isRecording() {
 		return this.isAlive() && isRecording;
 	}
-	
-	public void startRecording(){
-		try{
+
+	public void startRecording() {
+		try {
 			audioRecord.startRecording();
 			isRecording = true;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	public void stopRecording(){
-		try{
+
+	public void stopRecording() {
+		try {
 			audioRecord.stop();
 			isRecording = false;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	public byte[] getFrameBytes(){
+
+	public byte[] getFrameBytes() {
 		audioRecord.read(buffer, 0, frameByteSize);
-		
+
 		// analyze sound
 		int totalAbsValue = 0;
-        short sample = 0; 
-        float averageAbsValue = 0.0f;
-        
-        for (int i = 0; i < frameByteSize; i += 2) {
-            sample = (short)((buffer[i]) | buffer[i + 1] << 8);
-            totalAbsValue += Math.abs(sample);
-        }
-        averageAbsValue = totalAbsValue / frameByteSize / 2;
+		short sample = 0;
+		float averageAbsValue = 0.0f;
 
-        //System.out.println(averageAbsValue);
-        
-        // no input
-        if (averageAbsValue < 30){
-        	return null;
-        }
-        
+		for (int i = 0; i < frameByteSize; i += 2) {
+			sample = (short) ((buffer[i]) | buffer[i + 1] << 8);
+			totalAbsValue += Math.abs(sample);
+		}
+		averageAbsValue = totalAbsValue / frameByteSize / 2;
+
+		// System.out.println(averageAbsValue);
+
+		// no input
+		if (averageAbsValue < 30) {
+			return null;
+		}
+
 		return buffer;
 	}
-	
+
 	public void run() {
 		startRecording();
 	}
-	
+
 	public AudioRecord findAudioRecord() {
-	    for (int rate : mSampleRates) {
-	        for (short audioFormat : new short[] {AudioFormat.ENCODING_PCM_16BIT }) {
-	            for (short channelConfig : new short[] { AudioFormat.CHANNEL_CONFIGURATION_MONO}) {
-	                try {
-	                    Log.d("tag", "Attempting rate " + rate + "Hz, bits: " + audioFormat + ", channel: "
-	                            + channelConfig);
-	                    Log.d("tag", "done0");
+		try {
+			int bufferSize = AudioRecord
+					.getMinBufferSize(sampleRate, channelConfiguration,
+							AudioFormat.ENCODING_PCM_16BIT);
+			if (bufferSize != AudioRecord.ERROR_BAD_VALUE) {
+				// check if we can instantiate and have a success
+				AudioRecord recorder = new AudioRecord(AudioSource.MIC,
+						sampleRate, channelConfiguration,
+						AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+				Log.d("tag", "done1");
 
-	                    int bufferSize = AudioRecord.getMinBufferSize(rate, channelConfig, audioFormat);
-	                    Log.d("tag", "done");
-	                    if (bufferSize != AudioRecord.ERROR_BAD_VALUE) {
-	                        // check if we can instantiate and have a success
-	                        AudioRecord recorder = new AudioRecord(AudioSource.DEFAULT, rate, channelConfig, audioFormat, bufferSize);
-		                    Log.d("tag", "done1");
+				if (recorder.getState() == AudioRecord.STATE_INITIALIZED)
+					Log.d("tag", "done1.6");
 
-	                        if (recorder.getState() == AudioRecord.STATE_INITIALIZED)
-			                    Log.d("tag", "done1.6");
-
-	                            return recorder;
-	                    }
-	                } catch (Exception e) {
-	                    Log.d("tag", "done2");
-
-	                    Log.e("tag", rate + "Exception, keep trying.",e);
-	                }
-	            }
-	        }
-	    }
-	    return null;
+				return recorder;
+			}
+		} catch (Exception e) {
+			Log.d("tag", "done2");
+		}
+		return null;
 	}
 }
